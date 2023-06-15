@@ -15,5 +15,5 @@ def count_nas(cols, input_df):
     """
     Counts the number of NA observations in a dataframe column
     """
-    for col in colS:
+    for col in cols:
         Warning(f"{col} has {len(input_df[input_df[col].isna()])} NA observations")
