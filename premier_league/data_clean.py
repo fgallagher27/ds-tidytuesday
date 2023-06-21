@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+import pickle
 from data_clean_funcs import *
 
 premier_leauge = pd.read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-04-04/soccer21-22.csv")
@@ -32,16 +32,6 @@ long_df = pivot_home_away_to_long(full_wide_df, ids)
 long_df['ft_result'] = long_df.apply(lambda row: convert_result_to_win('ft_goals_for', 'ft_goals_against')(row), axis=1)
 long_df['ht_result'] = long_df.apply(lambda row: convert_result_to_win('ht_goals_for', 'ht_goals_against')(row), axis=1)
 
-pd.set_option('display.max_columns', None)
-print(long_df.head(10))
-
-# may need log transformation
-# either linear probability or logistic regression
-# any kind of classificaton
-# random forest - classification alogrith
-# Naive bayes classification
-# Neural network 
-
-# feature importance procedure
-# ridge regression
-
+pickle_out = open("data.pickle","wb")
+pickle.dump(long_df, pickle_out)
+pickle_out.close()
