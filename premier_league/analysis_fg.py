@@ -23,15 +23,15 @@ prem_stats_scaled = scale(prem_stats, axis=0)
 # create test and training splits
 x_train, x_test, y_train, y_test = train_test_split(prem_stats_scaled, prem_results, random_state=42)
 
-# logistic baseline
-log_prediction, log_accuracy = run_logistic_baseline(
-    {
+data_dict = {
         'x_train': x_train,
         'x_test': x_test,
         'y_train': y_train,
         'y_test': y_test
     }
-)
+
+# logistic baseline
+log_model, log_predict, log_accuracy = evaluate_classifier_model(data_dict, LogisticRegression)
 
 # run and fit random forest classifier
 forest_classifier = fit_random_classifier(x_train, y_train)
@@ -64,3 +64,26 @@ plot_feature_importance(
         'ylabel': 'Mean accuracy decrease'
     })
 plt.show(block=False)
+
+# train and evaluate Random Forest Classifier
+rf_model, rf_predict, rf_accuracy = evaluate_classifier_model(
+        data_dict,
+        RandomForestClassifier,
+        n_estimators=200,
+        random_state=42)
+
+print(f"Logistic Regression has accuracy of: {log_accuracy}")
+print(f"Random Forest Classifier has accuracy of: {rf_accuracy}")
+
+# now implement feature selection
+selected_features = ['shots_on_target_against', 'shots_on_target_for', 'ht_result', 'ht_goals_for', 'reds']
+selected_feature_index = pull_col_indexes(list(prem_stats), selected_features)
+selected_data_dict = implement_feature_selection(data_dict, selected_feature_index, ['x_train', 'x_test'])
+
+selected_rf_model, selected_rf_predict, selected_rf_accuracy = evaluate_classifier_model(
+        selected_data_dict,
+        RandomForestClassifier,
+        n_estimators=200,
+        random_state=42)
+
+print(f"Random Forest Classifier with feature selection has accuracy of: {selected_rf_accuracy}")
