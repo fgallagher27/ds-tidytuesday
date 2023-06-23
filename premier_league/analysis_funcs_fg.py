@@ -9,6 +9,25 @@ from sklearn.metrics import accuracy_score
 
 # To-do: Write a wrapper function that runs the feature importance analysis
 
+def select_cols_within_dict(dict, keys, cols_to_select):
+    for key in keys:
+        df = dict[key][cols_to_select]
+        dict[key] = df
+    return dict
+
+
+def pull_col_indexes(names, cols_oi):
+    return [i for i in range(len(names)) if names[i] in cols_oi]
+
+
+def implement_feature_selection(dict, col_indicies, keys):
+    """
+    This function edits the test/train dictionary to only keep the selected features
+    """
+    for key in keys:
+        dict[key] = np.take(dict[key], col_indicies, axis=1)
+    return dict
+
 
 def isolate_target_and_predictor_vars(df, target_var, predictor_vars):
     """
@@ -26,7 +45,7 @@ def isolate_target_and_predictor_vars(df, target_var, predictor_vars):
 def fit_random_classifier(x_train, y_train):
     """This function conducts a random forest classifier and fits the x and y training sets"""
     print("Fitting RandomForestClassifier...")
-    forest = RandomForestClassifier(random_state=0)
+    forest = RandomForestClassifier(n_estimators=100, random_state=0)
     forest.fit(x_train, y_train)
     return forest
 
@@ -87,21 +106,24 @@ def plot_feature_importance(importances, std, feature_names, labels):
     fig.tight_layout()
 
 
-def run_logistic_baseline(inputs):
+def evaluate_classifier_model(inputs, model_fn, **model_params):
     """
-    This function takes in an input dictionary with training and testing datasets and runs a logistic regression"""
-    print("Running Logistic Baseline...")
+    This function takes takes in a dictionary of test and training datasets and predicts the target variable using a specified model and parameters
+    Args:
+        inputs: a dictionary with keys x_train, x_test, y_train, y_test as keys and values are associated arrays/dataframes
+        model_fn: name of the classifier function to run
+        model_params: a list of additional arguments to pass
+        """
+    print(f"Running a {model_fn.__name__} model ...")
+    model = model_fn(**model_params)
 
-    # create instance of model
-    logistic_regression = LogisticRegression()
+    # Fit the model to the training data
+    model.fit(inputs['x_train'], inputs['y_train'])
 
-    # fit with data
-    logistic_regression.fit(inputs['x_train'], inputs['y_train'])
+    # Predict the target variable for the test data
+    y_pred = model.predict(inputs['x_test'])
 
-    # predict the target variable for your test data
-    y_pred = logistic_regression.predict(inputs['x_test'])
-
-    # accuracy is defined as the proportion of correct predictions over total predictions
+    # Calculate the accuracy score
     accuracy = accuracy_score(inputs['y_test'], y_pred)
 
-    return y_pred, accuracy
+    return model, y_pred, accuracy
