@@ -47,4 +47,4 @@ plot_feature_importance(
         'title': 'Feature importances using permuation on full model',
         'ylabel': 'Mean accuracy decrease'
     })
-plt.show()
+plt.show(block=False)
