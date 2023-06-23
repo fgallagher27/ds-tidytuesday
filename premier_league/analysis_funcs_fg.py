@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.inspection import permutation_importance
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
 # To-do: Write a wrapper function that runs the feature importance analysis
 
@@ -83,3 +85,23 @@ def plot_feature_importance(importances, std, feature_names, labels):
     ax.set_title(labels['title'])
     ax.set_ylabel(labels['ylabel'])
     fig.tight_layout()
+
+
+def run_logistic_baseline(inputs):
+    """
+    This function takes in an input dictionary with training and testing datasets and runs a logistic regression"""
+    print("Running Logistic Baseline...")
+
+    # create instance of model
+    logistic_regression = LogisticRegression()
+
+    # fit with data
+    logistic_regression.fit(inputs['x_train'], inputs['y_train'])
+
+    # predict the target variable for your test data
+    y_pred = logistic_regression.predict(inputs['x_test'])
+
+    # accuracy is defined as the proportion of correct predictions over total predictions
+    accuracy = accuracy_score(inputs['y_test'], y_pred)
+
+    return y_pred, accuracy
