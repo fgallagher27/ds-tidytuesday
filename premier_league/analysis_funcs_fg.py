@@ -50,6 +50,45 @@ def fit_random_classifier(x_train, y_train):
     return forest
 
 
+def calc_array_cum_sum(array):
+    """This function sorts an array largest to smallest and calculates the cumulative sum"""
+    if isinstance(array, pd.Series):
+        sorted = array.sort_values(ascending=False)
+        return pd.Series(sorted.cumsum(), index=list(sorted.index))
+    else:
+        return np.sort(array)[::-1].cumsum()
+
+
+def calc_cum_sum_threshold(array, threshold):
+    """This function calculates the cumulative sum of an array and filters the original array once it hits a certain proportion of the cumulative sum"""
+    cum_sum_array = calc_array_cum_sum(array)
+    total = max(cum_sum_array)
+    cutoff_index = np.argmax(cum_sum_array >= threshold * total)
+    reduced_array = cum_sum_array[:cutoff_index+1]
+    return reduced_array
+
+
+def pull_features_needed_to_hit_importance(features_series, threshold):
+    reduced = calc_cum_sum_threshold(features_series, threshold)
+    features = list(reduced.index)
+    coverage = max(reduced)*100
+    print("The following features have been selected:")
+    print("\n".join(features))
+    print(f"These features explain {coverage:.2f}% of relative importance")
+    return features
+
+
+def plot_cum_importance(series, threshold):
+    sorted = series.sort_values(ascending=False)
+    summed = calc_array_cum_sum(sorted)
+    x_locations = list(range(len(sorted)))
+    plt.figure()
+    plt.plot(x_locations, summed)
+    plt.hlines(y = threshold, xmin=0, xmax=len(series), color = 'r', linestyles = 'dashed')
+    plt.xticks(x_locations, list(summed.index), rotation = 'vertical')
+    plt.xlabel('Feature'); plt.ylabel('Cumulative Importance'); plt.title('Cumulative Importances')
+
+
 def calc_importance_mdi(forest):
     """
     This function calculates the feature importance based on Mean Decrease in Impurity.
