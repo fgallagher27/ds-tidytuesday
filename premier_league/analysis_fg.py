@@ -8,10 +8,12 @@ from analysis_funcs_fg import *
 pickle_in = open("long_premier_leauge_df.pickle","rb")
 prem_df = pickle.load(pickle_in)
 
-# assign parameter values
+# assign parameter values - TODO move parameters to a config file
 target = 'ft_result'
-non_predictors = ['date', 'team', 'ft_goals_for', 'ft_goals_against', target]
+non_predictors = ['date', 'team', 'ft_goals_for', 'ft_goals_against', 'ht_goals_for', 'ht_goals_against', target]
 predictors = [item for item in list(prem_df) if item not in non_predictors]
+relative_importance_threshold = 0.9
+show_plots = False
 
 # split predictors and target variables
 prem_results, prem_stats = isolate_target_and_predictor_vars(prem_df, target, predictors)
@@ -36,7 +38,11 @@ log_model, log_predict, log_accuracy = evaluate_classifier_model(data_dict, Logi
 # run and fit random forest classifier
 forest_classifier = fit_random_classifier(x_train, y_train)
 
-# calc feature importance scores by method
+# calc feature importance scores by mean decrease in impurity
+# this method is biased towards features with more categories
+# it also has no preference over which of two (or more) correlated features should be chosen
+# i.e. half_time_goals_for and half_time_result
+# this is not an issue for reducing overfitting, but need to be careful interpreting the resulting relative importances
 mdi_importance, mdi_std = calc_importance_mdi(forest_classifier)
 
 # Feature permutation is not biased towards high cardinality features, but is more likely to miss out a feature entirely
@@ -63,7 +69,15 @@ plot_feature_importance(
         'title': 'Feature importances using permuation on full model',
         'ylabel': 'Mean accuracy decrease'
     })
-plt.show(block=False)
+
+
+feature_series = pd.Series(mdi_importance, index=feature_names)
+plot_cum_importance(feature_series, relative_importance_threshold)
+
+# TODO either show plots and ask user to choose mdi vs perm, or convert to notebook so user can run sections and see the plots
+plt.show(block=show_plots)
+
+# TODO: create function that benchmarks accuracy and run time depending on number of features
 
 # train and evaluate Random Forest Classifier
 rf_model, rf_predict, rf_accuracy = evaluate_classifier_model(
@@ -72,11 +86,13 @@ rf_model, rf_predict, rf_accuracy = evaluate_classifier_model(
         n_estimators=200,
         random_state=42)
 
-print(f"Logistic Regression has accuracy of: {log_accuracy}")
-print(f"Random Forest Classifier has accuracy of: {rf_accuracy}")
+print(f"Logistic Regression has accuracy of: {log_accuracy:.3f}")
+print(f"Random Forest Classifier has accuracy of: {rf_accuracy:.3f}")
 
 # now implement feature selection
-selected_features = ['shots_on_target_against', 'shots_on_target_for', 'ht_result', 'ht_goals_for', 'reds']
+selected_features = pull_features_needed_to_hit_importance(feature_series, relative_importance_threshold)
+# TODO options to pull features based on a mean decrease in accuracy criteria instead
+
 selected_feature_index = pull_col_indexes(list(prem_stats), selected_features)
 selected_data_dict = implement_feature_selection(data_dict, selected_feature_index, ['x_train', 'x_test'])
 
@@ -86,4 +102,4 @@ selected_rf_model, selected_rf_predict, selected_rf_accuracy = evaluate_classifi
         n_estimators=200,
         random_state=42)
 
-print(f"Random Forest Classifier with feature selection has accuracy of: {selected_rf_accuracy}")
+print(f"Random Forest Classifier with feature selection has accuracy of: {selected_rf_accuracy:.3f}")
